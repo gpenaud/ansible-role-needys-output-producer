@@ -1,0 +1,100 @@
+---
+- name: initates the preflight checks
+  include: check/preflight.yml
+  tags: preflight
+
+- name: install git
+  package:
+    name: git
+    update_cache: yes
+
+- name: "ensure group {{ needys_output_producer_group }} does exist already"
+  group:
+    name: "{{ needys_output_producer_group }}"
+    state: present
+
+- name: "create system {{ needys_output_producer_user }} user"
+  user:
+    name: "{{ needys_output_producer_user }}"
+    state: present
+    groups: "{{ needys_output_producer_group }}"
+    shell: /sbin/nologin
+    append: yes
+    system: yes
+    comment: "system user without password to execute needys-output-producer"
+
+- name: download go archive version {{ needys_output_producer_golang_version }}
+  get_url:
+    url: "{{ needys_output_producer_golang_url }}"
+    dest: "/tmp/go1.{{ needys_output_producer_golang_version }}.linux-amd64.tar.gz"
+  register: go_archive
+
+- name: unarchive golang tar
+  unarchive:
+    src: "/tmp/go1.{{ needys_output_producer_golang_version }}.linux-amd64.tar.gz"
+    dest: /usr/local/bin
+    remote_src: yes
+    owner: "{{ needys_output_producer_user }}"
+    group: "{{ needys_output_producer_group }}"
+    mode: 0777
+  when: go_archive.changed or (force_all_tasks is defined and force_all_tasks == "yes")
+
+- name: clone the git repository from github
+  git:
+    repo: "{{ needys_output_producer_repository_url }}"
+    dest: "{{ needys_output_producer_repository_path }}"
+    version: "{{ needys_output_producer_version }}"
+    force: yes
+  register: git_repository
+
+- name: download required go modules
+  shell: |-
+    go mod download
+  environment:
+    PATH: /usr/local/bin/go/bin
+  args:
+    chdir: "{{ needys_output_producer_repository_path }}"
+  when: git_repository.changed or (force_all_tasks is defined and force_all_tasks == "yes")
+
+- name: build needys-output-producer go binary
+  shell: |-
+    go build \
+      -a \
+      -installsuffix cgo \
+      -o {{ needys_output_producer_binary_path }}/{{ needys_output_producer_binary }} \
+    {{ needys_output_producer_repository_path }}/{{ needys_output_producer_build_source_path }}
+  args:
+    chdir: "{{ needys_output_producer_repository_path }}"
+    executable: /bin/bash
+  environment:
+    PATH: /usr/local/bin/go/bin
+    CGO_ENABLED: 0
+    GOOS: linux
+  when: git_repository.changed or (force_all_tasks is defined and force_all_tasks == "yes")
+
+- name: set rights and owners on binary
+  file:
+    path: "{{ needys_output_producer_binary_path }}/{{ needys_output_producer_binary }}"
+    owner: "{{ needys_output_producer_user }}"
+    group: "{{ needys_output_producer_group }}"
+    mode: 0750
+  when: git_repository.changed or (force_all_tasks is defined and force_all_tasks == "yes")
+
+- name: set systemd service file to manage application
+  template:
+    src: service.j2
+    dest: "{{ needys_output_producer_systemd_service_path }}/{{ needys_output_producer_systemd_service_name }}"
+    owner: "{{ needys_output_producer_user }}"
+    group: "{{ needys_output_producer_group }}"
+  notify:
+    - "enable {{ needys_output_producer_systemd_service_name }}"
+    - "restart {{ needys_output_producer_systemd_service_name }}"
+
+- name: triggers handlers if tasks are forced
+  command: /bin/true
+  notify:
+    - "enable {{ needys_output_producer_systemd_service_name }}"
+    - "restart {{ needys_output_producer_systemd_service_name }}"
+  when: force_all_tasks is defined and force_all_tasks == "yes"
+
+- meta: flush_handlers

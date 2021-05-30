@@ -1,0 +1,18 @@
+---
+needys_output_producer_version: 0.0.1
+
+needys_output_producer_user: needys-output-producer
+needys_output_producer_group: needys-output-producer
+needys_output_producer_user_home: /home/needys-output-producer
+needys_output_producer_golang_version: 16.4
+needys_output_producer_golang_url: "https://golang.org/dl/go1.{{ needys_output_producer_golang_version }}.linux-amd64.tar.gz"
+
+needys_output_producer_build_source_path: cmd/needys-output-producer-listener/main.go
+needys_output_producer_binary: needys-output-producer
+needys_output_producer_binary_path: /usr/local/bin
+needys_output_producer_systemd_service_name: needys-output-producer.service
+needys_output_producer_systemd_service_path: /etc/systemd/system
+needys_output_producer_repository_url: https://github.com/gpenaud/needys-output-producer
+needys_output_producer_repository_path: /tmp/needys-output-producer
+
+needys_output_producer_binary_options: []

@@ -1,0 +1,22 @@
+---
+dependencies: []
+
+galaxy_info:
+  author: gpeanuts
+  description: Needys output producer deployment on bare servers.
+  company: "gpenauts corp."
+  license: "license (BSD, MIT)"
+  min_ansible_version: 2.4
+  platforms:
+  - name: EL
+    versions:
+    - all
+  - name: Debian
+    versions:
+    - all
+  - name: Ubuntu
+    versions:
+    - all
+  galaxy_tags:
+    - golang
+    - application

@@ -1,0 +1,13 @@
+---
+- name: "retrieve http status from url {{ uri }}"
+  uri:
+    url: "{{ uri }}"
+    method: HEAD
+  register: uri_test
+  failed_when: uri_test.status is undefined
+
+- name: assert that http status is equal to 200
+  assert:
+    that:
+      - uri_test.status == 200
+    msg: "\"{{ uri }}\" is not joinable"

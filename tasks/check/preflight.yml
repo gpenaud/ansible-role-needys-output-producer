@@ -1,0 +1,29 @@
+
+- name: include checking of uris used
+  include_tasks: preflight_check_uris.yml
+  loop:
+  - "{{ needys_output_producer_golang_url }}"
+  - "{{ needys_output_producer_repository_url }}"
+  loop_control:
+    loop_var: uri
+
+- name: check that required vars are defined
+  assert:
+    that:
+    - variable is defined and variable != ""
+  loop:
+  - needys_output_producer_version
+  - needys_output_producer_user
+  - needys_output_producer_group
+  - needys_output_producer_user_home
+  - needys_output_producer_golang_version
+  - needys_output_producer_golang_url
+  - needys_output_producer_binary
+  - needys_output_producer_binary_path
+  - needys_output_producer_systemd_service_name
+  - needys_output_producer_systemd_service_path
+  - needys_output_producer_repository_url
+  - needys_output_producer_repository_path
+  - needys_output_producer_binary_options
+  loop_control:
+    loop_var: variable
